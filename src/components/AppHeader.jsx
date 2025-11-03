@@ -2,6 +2,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { LogIn, LogOut, Sparkle, User } from 'lucide-react'
 import { Button } from './ui/button'
 import { AvatarFallback, AvatarImage, AvatarRoot } from './ui/avatar'
+import { SearchBar } from './ui/SearchBar'
 import { cn } from '../lib/utils'
 
 const navLinks = [
@@ -10,7 +11,7 @@ const navLinks = [
   { to: '/profile', label: 'Profile' },
 ]
 
-export const AppHeader = ({ user, onSignIn, onSignOut }) => {
+export const AppHeader = ({ user, onSignIn, onSignOut, onSearch }) => {
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -26,6 +27,13 @@ export const AppHeader = ({ user, onSignIn, onSignOut }) => {
             <span className="bf-header__logo-sub">Sage companion</span>
           </div>
         </Link>
+
+        {/* Add Search Bar */}
+        {onSearch && (
+          <div className="bf-header__search">
+            <SearchBar onSearch={onSearch} />
+          </div>
+        )}
 
         <nav className="bf-header__nav">
           {navLinks.map((link) => (

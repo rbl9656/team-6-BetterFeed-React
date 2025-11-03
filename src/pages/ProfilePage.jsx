@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { db } from '../lib/db'
 import { useAuthStore } from '../store/auth'
 import { ProfileCard } from '../components/profile/ProfileCard'
+import { ReadingHistorySection } from '../components/profile/ReadingHistorySection'
 import { Badge } from '../components/ui/badge'
 
 export const ProfilePage = () => {
+  const navigate = useNavigate()
   const { user, logout } = useAuthStore()
   const [interactions, setInteractions] = useState([])
   const [posts, setPosts] = useState([])
@@ -13,7 +15,7 @@ export const ProfilePage = () => {
   useEffect(() => {
     if (!user) return
     db.getUserInteractions(user.id).then(setInteractions)
-    db.getPosts({ limit: 60 }).then((response) => {
+    db.getPosts({ limit: 200 }).then((response) => {
       setPosts(response.items)
     })
   }, [user?.id])
@@ -26,6 +28,10 @@ export const ProfilePage = () => {
   const savedCount = interactions.filter((item) => item.interaction_type === 'save').length
 
   const authoredPosts = posts.filter((post) => post.user_id === user.id)
+
+  const handlePostClick = (post) => {
+    navigate(`/post/${post.id}`)
+  }
 
   return (
     <div className="bf-page bf-page--narrow">
@@ -63,6 +69,9 @@ export const ProfilePage = () => {
           </div>
         </div>
       </section>
+
+      {/* Add Reading History Section */}
+      <ReadingHistorySection posts={posts} onPostClick={handlePostClick} />
 
       <section className="bf-panel bf-panel--light">
         <div className="bf-panel__header">

@@ -29,10 +29,41 @@ export const FeedPage = () => {
   const [categories, setCategories] = useState(['General'])
   const [activePost, setActivePost] = useState(null)
   const [panelOpen, setPanelOpen] = useState(false)
+  
+  // Add search state
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filteredPosts, setFilteredPosts] = useState([])
 
   useEffect(() => {
     db.getCategories().then(setCategories)
   }, [])
+
+  // Listen for search events from header
+  useEffect(() => {
+    const handleSearch = (e) => {
+      setSearchTerm(e.detail)
+    }
+    window.addEventListener('feed-search', handleSearch)
+    return () => window.removeEventListener('feed-search', handleSearch)
+  }, [])
+
+  // Filter posts based on search
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredPosts(posts)
+      return
+    }
+
+    const searchLower = searchTerm.toLowerCase()
+    const filtered = posts.filter(post => 
+      post.title.toLowerCase().includes(searchLower) ||
+      post.content.toLowerCase().includes(searchLower) ||
+      post.category.toLowerCase().includes(searchLower) ||
+      post.source.toLowerCase().includes(searchLower)
+    )
+    
+    setFilteredPosts(filtered)
+  }, [searchTerm, posts])
 
   const handleCreatePost = async (payload) => {
     if (!user) {
@@ -54,28 +85,38 @@ export const FeedPage = () => {
     refresh()
   }
 
+  // Use filteredPosts instead of posts
+  const displayPosts = searchTerm ? filteredPosts : posts
+
   return (
     <div className="bf-feed-page">
       <CategoryTabs categories={categories} active={category} onChange={setCategory} />
 
-      <motion.section layout className="bf-feed-grid">
-        {posts.map((post) => (
-          <FeedCard
-            key={post.id}
-            post={post}
-            isLiked={likedIds.has(post.id)}
-            isSaved={savedIds.has(post.id)}
-            onLike={() => toggleLike(post.id)}
-            onSave={() => toggleSave(post.id)}
-            onOpen={() => {
-              setActivePost(post)
-              setPanelOpen(true)
-            }}
-          />
-        ))}
+      {searchTerm && displayPosts.length === 0 ? (
+        <div className="bf-empty-state">
+          <p>No articles found matching "{searchTerm}"</p>
+          <p className="bf-empty-state__hint">Try different keywords or clear your search</p>
+        </div>
+      ) : (
+        <motion.section layout className="bf-feed-grid">
+          {displayPosts.map((post) => (
+            <FeedCard
+              key={post.id}
+              post={post}
+              isLiked={likedIds.has(post.id)}
+              isSaved={savedIds.has(post.id)}
+              onLike={() => toggleLike(post.id)}
+              onSave={() => toggleSave(post.id)}
+              onOpen={() => {
+                setActivePost(post)
+                setPanelOpen(true)
+              }}
+            />
+          ))}
 
-        <InfiniteScroller hasMore={hasMore} isLoading={isLoading} onLoadMore={loadMore} />
-      </motion.section>
+          {!searchTerm && <InfiniteScroller hasMore={hasMore} isLoading={isLoading} onLoadMore={loadMore} />}
+        </motion.section>
+      )}
 
       <PostComposer categories={categories} onCreate={handleCreatePost} />
 

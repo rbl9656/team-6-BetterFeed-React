@@ -3,8 +3,17 @@ import { ArrowRight, ExternalLink, Sparkles } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { EngagementBar } from './EngagementBar'
+import { ReadBadge } from './ReadBadge'
+import { readingHistory } from '../../lib/readingHistory'
 
 export const FeedCard = ({ post, isLiked, isSaved, onLike, onSave, onOpen }) => {
+  const isRead = readingHistory.hasRead(post.id)
+
+  const handleOpen = () => {
+    readingHistory.markAsRead(post.id)
+    onOpen()
+  }
+
   return (
     <motion.article
       layout
@@ -23,6 +32,7 @@ export const FeedCard = ({ post, isLiked, isSaved, onLike, onSave, onOpen }) => 
               day: 'numeric',
             })}
           </span>
+          <ReadBadge isRead={isRead} compact />
         </div>
 
         <div className="bf-feed-card__text">
@@ -54,7 +64,7 @@ export const FeedCard = ({ post, isLiked, isSaved, onLike, onSave, onOpen }) => 
           />
         </div>
 
-        <Button variant="secondary" className="bf-feed-card__cta" onClick={onOpen}>
+        <Button variant="secondary" className="bf-feed-card__cta" onClick={handleOpen}>
           <span className="bf-feed-card__cta-text">
             <Sparkles className="bf-icon-md" />
             Swipe for AI conversation

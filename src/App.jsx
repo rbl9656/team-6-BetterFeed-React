@@ -29,6 +29,10 @@ const AppShell = () => {
         user={user}
         onSignIn={() => navigate('/login')}
         onSignOut={logout}
+        onSearch={location.pathname === '/' ? (term) => {
+          // Search will be handled in FeedPage
+          window.dispatchEvent(new CustomEvent('feed-search', { detail: term }))
+        } : null}
       />
       <main className="bf-main">
         {!initialized ? (
