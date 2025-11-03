@@ -1,1 +1,2 @@
 **Veyd:** Basic skeleton of display and design features. Less focused on functionality.
+**Kyle** Updated background color selection and fixed issue where background fading was resetting after every post.
