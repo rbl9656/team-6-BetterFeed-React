@@ -133,6 +133,14 @@ Currently the pages except for the header are not responsive (they don't change 
 - Breakpoints used: 640px (tablet portrait), 768px (tablet landscape/desktop), 1024px (large desktop)
 
 **Prompt**
+“Pretend that you are building a React frontend for a personalized academic news feed app. 
+
+Remove the multiple gradients from the background in body and replace them with a cream/tan color. Keep the existing typography and component styles intact.”
+
+**Result**
+The Prompt did a good job at not making any changes outside of the section specified without changing the appearance and code for other parts of the app.
+
+**Prompt**
 Take on the role of an undergraduate student in a programming class. Looking at the attached instructions and at the previously generated files attached for a React front-end for an instagram reels-esque web app that shows summarized articles with an AI assistant, show me how to implement and edit my code to create a searchbar that can be used with key words and a reading history that shows on your profile and adds a mark to the feed.
 
 **Result**
