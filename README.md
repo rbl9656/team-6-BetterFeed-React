@@ -4,7 +4,7 @@
 - **Veyd:** Created basic skeleton of display and design features. Less focused on functionality.
 - **Kyle** Updated background color selection and fixed issue where background fading was resetting after every post.
 - **Robbie** Added search bar based on key words and reading history to the profile and feed.
-- **Temirlan**: 
+- **Temirlan**: Added responsive design for mobile and desktop views and integrated React Query to reduce the amount of refetches
 
 ## What It Does
 BetterFeed is an AI-powered smart feed application that presents condensed academic articles in an engaging, swipeable interface. Users can browse curated content, interact with posts through likes and saves, filter by categories, and most uniquely, engage with an AI assistant that explains or debates each article in different conversational styles. The app tracks your reading history and creates a personalized library of saved content for easy reference.
