@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 import { CategoryTabs } from '../components/CategoryTabs'
 import { FeedCard } from '../components/feed/FeedCard'
 import { InfiniteScroller } from '../components/feed/InfiniteScroller'

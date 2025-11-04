@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 import { db } from '../lib/db'
 import { FeedCard } from '../components/feed/FeedCard'
 import { AIChatPanel } from '../components/AIChatPanel'

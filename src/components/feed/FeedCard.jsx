@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 import { ArrowRight, ExternalLink, Sparkles } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'

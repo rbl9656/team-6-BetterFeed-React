@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'motion/react'
 import { PaperPlaneIcon } from '@radix-ui/react-icons'
 import { Textarea } from './ui/textarea'
 import { Button } from './ui/button'
