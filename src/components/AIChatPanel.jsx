@@ -74,6 +74,10 @@ export const AIChatPanel = ({ open, onClose, post, style }) => {
   useEffect(() => {
     if (!open) return undefined
 
+    // Lock body scroll when panel is open
+    const originalStyle = window.getComputedStyle(document.body).overflow
+    document.body.style.overflow = 'hidden'
+
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         event.preventDefault()
@@ -82,7 +86,10 @@ export const AIChatPanel = ({ open, onClose, post, style }) => {
     }
 
     document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = originalStyle
+    }
   }, [open, onClose])
 
   useEffect(() => {

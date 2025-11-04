@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'motion/react'
 import { CategoryTabs } from '../components/CategoryTabs'
 import { FeedCard } from '../components/feed/FeedCard'
 import { InfiniteScroller } from '../components/feed/InfiniteScroller'
@@ -98,7 +97,7 @@ export const FeedPage = () => {
           <p className="bf-empty-state__hint">Try different keywords or clear your search</p>
         </div>
       ) : (
-        <motion.section layout className="bf-feed-grid">
+        <section className="bf-feed-grid">
           {displayPosts.map((post) => (
             <FeedCard
               key={post.id}
@@ -115,7 +114,7 @@ export const FeedPage = () => {
           ))}
 
           {!searchTerm && <InfiniteScroller hasMore={hasMore} isLoading={isLoading} onLoadMore={loadMore} />}
-        </motion.section>
+        </section>
       )}
 
       <PostComposer categories={categories} onCreate={handleCreatePost} />

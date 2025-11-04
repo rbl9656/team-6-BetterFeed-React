@@ -1,5 +1,6 @@
+import { useState, useRef } from 'react'
 import { motion } from 'motion/react'
-import { ArrowRight, ExternalLink, Sparkles } from 'lucide-react'
+import { ExternalLink, Sparkles, ArrowLeft } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { EngagementBar } from './EngagementBar'
@@ -8,19 +9,105 @@ import { readingHistory } from '../../lib/readingHistory'
 
 export const FeedCard = ({ post, isLiked, isSaved, onLike, onSave, onOpen }) => {
   const isRead = readingHistory.hasRead(post.id)
+  const touchStartRef = useRef(null)
+  const touchEndRef = useRef(null)
+  const [swipeOffset, setSwipeOffset] = useState(0)
+
+  const minSwipeDistance = 50 // Minimum distance for a swipe
 
   const handleOpen = () => {
     readingHistory.markAsRead(post.id)
     onOpen()
   }
 
+  const onTouchStart = (e) => {
+    touchEndRef.current = null
+    touchStartRef.current = e.touches[0].clientX
+  }
+
+  const onTouchMove = (e) => {
+    if (!touchStartRef.current) return
+    const currentX = e.touches[0].clientX
+    const diff = touchStartRef.current - currentX
+    // Only allow left swipe (positive diff) and show visual feedback
+    if (diff > 0) {
+      setSwipeOffset(Math.min(diff, 150))
+      e.preventDefault() // Prevent scrolling while swiping horizontally
+    }
+  }
+
+  const onTouchEnd = () => {
+    if (!touchStartRef.current) return
+    
+    const endX = touchEndRef.current ?? touchStartRef.current
+    const distance = touchStartRef.current - endX
+    const isLeftSwipe = distance > minSwipeDistance
+
+    if (isLeftSwipe) {
+      handleOpen()
+    }
+    
+    setSwipeOffset(0)
+    touchStartRef.current = null
+    touchEndRef.current = null
+  }
+
+  const onMouseDown = (e) => {
+    touchStartRef.current = e.clientX
+    touchEndRef.current = null
+  }
+
+  const onMouseMove = (e) => {
+    if (!touchStartRef.current) return
+    const currentX = e.clientX
+    const diff = touchStartRef.current - currentX
+    // Only allow left swipe (positive diff)
+    if (diff > 0) {
+      setSwipeOffset(Math.min(diff, 150))
+    }
+  }
+
+  const onMouseUp = (e) => {
+    if (!touchStartRef.current) return
+    
+    touchEndRef.current = e.clientX
+    const distance = touchStartRef.current - touchEndRef.current
+    const isLeftSwipe = distance > minSwipeDistance
+
+    if (isLeftSwipe) {
+      handleOpen()
+    }
+    
+    setSwipeOffset(0)
+    touchStartRef.current = null
+    touchEndRef.current = null
+  }
+
+  const onMouseLeave = () => {
+    if (touchStartRef.current) {
+      setSwipeOffset(0)
+      touchStartRef.current = null
+      touchEndRef.current = null
+    }
+  }
+
   return (
     <motion.article
-      layout
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+      animate={{ opacity: 1, y: 0, x: -swipeOffset }}
+      transition={swipeOffset > 0 ? { duration: 0.1 } : { duration: 0.25, ease: 'easeOut' }}
       className="bf-feed-card"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={(e) => {
+        touchEndRef.current = e.changedTouches[0].clientX
+        onTouchEnd()
+      }}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseLeave}
+      style={{ touchAction: 'pan-y', cursor: swipeOffset > 0 ? 'grabbing' : 'grab' }}
     >
       <div className="bf-feed-card__accent" aria-hidden />
       <div className="bf-feed-card__body">
@@ -67,9 +154,9 @@ export const FeedCard = ({ post, isLiked, isSaved, onLike, onSave, onOpen }) => 
         <Button variant="secondary" className="bf-feed-card__cta" onClick={handleOpen}>
           <span className="bf-feed-card__cta-text">
             <Sparkles className="bf-icon-md" />
-            Swipe for AI conversation
+            Swipe for AI
           </span>
-          <ArrowRight className="bf-icon-md" />
+          <ArrowLeft className="bf-icon-md" />
         </Button>
       </div>
 

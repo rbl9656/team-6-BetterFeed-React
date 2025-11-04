@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useState, useMemo } from 'react'
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
 import { db } from '../lib/db'
 import { useAuthStore } from '../store/auth'
 import { useToast } from '../context/toast'
@@ -8,72 +9,64 @@ const createInteractionState = () => ({ likes: new Set(), saves: new Set() })
 export const useFeed = () => {
   const { user } = useAuthStore()
   const { pushToast } = useToast()
-  const [state, setState] = useState({
-    posts: [],
-    cursor: null,
-    hasMore: true,
-    isLoading: false,
-    category: 'General',
-    interactions: createInteractionState(),
+  const queryClient = useQueryClient()
+  const [category, setCategoryState] = useState('General')
+
+  // Fetch user interactions
+  const { data: interactionsData } = useQuery({
+    queryKey: ['user-interactions', user?.id],
+    queryFn: async () => {
+      if (!user) return createInteractionState()
+      const records = await db.getUserInteractions(user.id)
+      const likes = new Set()
+      const saves = new Set()
+      records.forEach((item) => {
+        if (item.interaction_type === 'like') likes.add(item.post_id)
+        if (item.interaction_type === 'save') saves.add(item.post_id)
+      })
+      return { likes, saves }
+    },
+    enabled: !!user,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    initialData: () => createInteractionState(),
   })
 
-  const hydrateInteractions = async () => {
-    if (!user) {
-      setState((prev) => ({ ...prev, interactions: createInteractionState() }))
-      return
-    }
-    const records = await db.getUserInteractions(user.id)
-    const likes = new Set()
-    const saves = new Set()
-    records.forEach((item) => {
-      if (item.interaction_type === 'like') likes.add(item.post_id)
-      if (item.interaction_type === 'save') saves.add(item.post_id)
-    })
-    setState((prev) => ({ ...prev, interactions: { likes, saves } }))
-  }
+  const interactions = interactionsData || createInteractionState()
 
-  useEffect(() => {
-    hydrateInteractions()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id])
+  // Infinite query for posts by category
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['posts', category],
+    queryFn: async ({ pageParam = null }) => {
+      const response = await db.getPosts({
+        category,
+        cursor: pageParam,
+      })
+      return response
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor || undefined,
+    initialPageParam: null,
+    staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
+  })
 
-  const load = async (options = {}) => {
-    const reset = options?.reset ?? false
-    const category = options?.category ?? state.category
-    setState((prev) => ({ ...prev, isLoading: true }))
-    const response = await db.getPosts({
-      category,
-      cursor: reset ? null : state.cursor,
-    })
-    setState((prev) => ({
-      ...prev,
-      posts: reset ? response.items : [...prev.posts, ...response.items],
-      cursor: response.nextCursor,
-      hasMore: Boolean(response.nextCursor),
-      isLoading: false,
-    }))
-  }
+  // Flatten all pages into a single array
+  const posts = useMemo(() => {
+    if (!data?.pages) return []
+    return data.pages.flatMap((page) => page.items)
+  }, [data])
 
-  useEffect(() => {
-    load({ reset: true, category: state.category })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.category])
+  const hasMore = hasNextPage ?? false
+  const isLoading = isFetching && !isFetchingNextPage
+  const isLoadingMore = isFetchingNextPage
 
-  useEffect(() => {
-    if (!state.posts.length) {
-      load({ reset: true })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const setCategory = (category) => {
-    setState((prev) => ({
-      ...prev,
-      category,
-      posts: [],
-      cursor: null,
-      hasMore: true,
-    }))
+  const setCategory = (newCategory) => {
+    setCategoryState(newCategory)
   }
 
   const toggleInteraction = async (postId, type) => {
@@ -82,90 +75,113 @@ export const useFeed = () => {
       return
     }
 
-    setState((prev) => {
-      const interactions = createInteractionState()
-      prev.interactions.likes.forEach((id) => interactions.likes.add(id))
-      prev.interactions.saves.forEach((id) => interactions.saves.add(id))
+    // Optimistic update
+    const targetSet = type === 'like' ? interactions.likes : interactions.saves
+    const isActive = targetSet.has(postId)
 
-      const targetSet = type === 'like' ? interactions.likes : interactions.saves
-      const isActive = targetSet.has(postId)
-      if (isActive) targetSet.delete(postId)
-      else targetSet.add(postId)
+    // Update interactions cache optimistically
+    queryClient.setQueryData(['user-interactions', user.id], (old) => {
+      const newInteractions = createInteractionState()
+      old.likes.forEach((id) => newInteractions.likes.add(id))
+      old.saves.forEach((id) => newInteractions.saves.add(id))
+      const target = type === 'like' ? newInteractions.likes : newInteractions.saves
+      if (isActive) {
+        target.delete(postId)
+      } else {
+        target.add(postId)
+      }
+      return newInteractions
+    })
 
-      const posts = prev.posts.map((post) => {
-        if (post.id !== postId) return post
-        const delta = isActive ? -1 : 1
-        if (type === 'like') {
-          return { ...post, like_count: Math.max(0, post.like_count + delta) }
-        }
-        return { ...post, save_count: Math.max(0, post.save_count + delta) }
-      })
-
+    // Update posts cache optimistically
+    queryClient.setQueryData(['posts', category], (old) => {
+      if (!old) return old
       return {
-        ...prev,
-        posts,
-        interactions,
+        ...old,
+        pages: old.pages.map((page) => ({
+          ...page,
+          items: page.items.map((post) => {
+            if (post.id !== postId) return post
+            const delta = isActive ? -1 : 1
+            if (type === 'like') {
+              return { ...post, like_count: Math.max(0, post.like_count + delta) }
+            }
+            return { ...post, save_count: Math.max(0, post.save_count + delta) }
+          }),
+        })),
       }
     })
 
     try {
       const result = await db.toggleInteraction(user.id, postId, type)
-      setState((prev) => {
-        const interactions = createInteractionState()
-        prev.interactions.likes.forEach((id) => interactions.likes.add(id))
-        prev.interactions.saves.forEach((id) => interactions.saves.add(id))
-        const targetSet = type === 'like' ? interactions.likes : interactions.saves
-        if (result.active) targetSet.add(postId)
-        else targetSet.delete(postId)
+      
+      // Update with server response
+      queryClient.setQueryData(['user-interactions', user.id], (old) => {
+        const newInteractions = createInteractionState()
+        old.likes.forEach((id) => newInteractions.likes.add(id))
+        old.saves.forEach((id) => newInteractions.saves.add(id))
+        const target = type === 'like' ? newInteractions.likes : newInteractions.saves
+        if (result.active) {
+          target.add(postId)
+        } else {
+          target.delete(postId)
+        }
+        return newInteractions
+      })
 
-        const posts = prev.posts.map((post) =>
-          post.id === postId ? { ...post, like_count: result.post.like_count, save_count: result.post.save_count } : post
-        )
-
+      // Update posts with server response
+      queryClient.setQueryData(['posts', category], (old) => {
+        if (!old) return old
         return {
-          ...prev,
-          posts,
-          interactions,
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            items: page.items.map((post) =>
+              post.id === postId
+                ? { ...post, like_count: result.post.like_count, save_count: result.post.save_count }
+                : post
+            ),
+          })),
         }
       })
     } catch (error) {
       console.error(error)
       pushToast({ title: 'Something went wrong', description: 'Unable to update the interaction.', variant: 'error' })
-      await hydrateInteractions()
-      const freshPost = await db.getPost(postId)
-      if (freshPost) {
-        setState((prev) => ({
-          ...prev,
-          posts: prev.posts.map((post) => (post.id === postId ? freshPost : post)),
-        }))
-      }
+      
+      // Revert optimistic updates
+      queryClient.invalidateQueries({ queryKey: ['user-interactions', user.id] })
+      queryClient.invalidateQueries({ queryKey: ['posts', category] })
     }
   }
 
   const loadMore = async () => {
-    if (!state.hasMore || state.isLoading) return
-    await load({ reset: false })
+    if (!hasMore || isLoadingMore) return
+    await fetchNextPage()
+  }
+
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['posts', category] })
   }
 
   const metadata = useMemo(
     () => ({
-      likedIds: state.interactions.likes,
-      savedIds: state.interactions.saves,
+      likedIds: interactions.likes,
+      savedIds: interactions.saves,
     }),
-    [state.interactions]
+    [interactions]
   )
 
   return {
-    posts: state.posts,
-    category: state.category,
-    isLoading: state.isLoading,
-    hasMore: state.hasMore,
+    posts,
+    category,
+    isLoading,
+    hasMore,
     likedIds: metadata.likedIds,
     savedIds: metadata.savedIds,
     setCategory,
     loadMore,
     toggleLike: (postId) => toggleInteraction(postId, 'like'),
     toggleSave: (postId) => toggleInteraction(postId, 'save'),
-    refresh: () => load({ reset: true }),
+    refresh,
   }
 }

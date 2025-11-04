@@ -111,11 +111,62 @@ Make it responsive for mobile and desktop
 
 **Result:**
 
+**Prompt:**
+Currently the pages except for the header are not responsive (they don't change width and view on mobile), fix it. Leverage tailwindcss media queries.
+
+*Note: After discussion, we decided to use pure CSS media queries instead of Tailwind classes to maintain the existing CSS convention.*
+
+**Result:**
+- Added responsive CSS media queries to all page components in `index.css` using pure CSS (no Tailwind)
+- Pages now adapt properly on mobile, tablet, and desktop viewports
+- Key changes:
+  - `.bf-page` and `.bf-feed-page`: Full width on mobile, constrained max-width (1100px) on desktop
+  - `.bf-page--narrow`: Responsive width (full on mobile, 600px on tablet, 900px on desktop)
+  - `.bf-page__title`: Smaller font size (1.5rem) on mobile, larger (2rem) on desktop
+  - `.bf-counter-grid`: Single column on mobile, 2 columns on tablet, 3 columns on desktop
+  - `.bf-panel__header`: Stacks vertically on mobile, horizontal on desktop
+  - `.bf-auth-shell` and `.bf-auth-card`: Responsive padding and width constraints
+  - `.bf-panel`: Reduced padding on mobile for better space utilization
+  - `.bf-empty-state`: Reduced padding on mobile
+  - `.bf-history-list` and `.bf-authored-list`: Adjusted gap spacing for mobile
+- All changes maintain existing CSS class structure and naming conventions
+- Breakpoints used: 640px (tablet portrait), 768px (tablet landscape/desktop), 1024px (large desktop)
+
 **Prompt**
 Take on the role of an undergraduate student in a programming class. Looking at the attached instructions and at the previously generated files attached for a React front-end for an instagram reels-esque web app that shows summarized articles with an AI assistant, show me how to implement and edit my code to create a searchbar that can be used with key words and a reading history that shows on your profile and adds a mark to the feed.
 
 **Result**
 This prompt did an effective job in taking the previously created code from past group members and making additions without causing a major change in the style or spacing of the web app. The searchbar feature was integrated seamlessly and when tested, would filter the desired article. The read history tool was slightly more difficult to put into practice, as the code generated for several of the files did not work properly and the javascript had to be edited manually in order to not error out. I also had placed one of the files into the wrong folder, which took some time to error shoot and finally realize the issue and move it.
+
+**Prompt:**
+The animation of the feed after it loads is insane, like everything stretches to the entire screen and then pops back, can we investigate?
+
+**Result:**
+- Identified that Framer Motion's `layout` prop on the `motion.section` container in `FeedPage.jsx` was causing layout animations during initial load
+- The `layout` prop animates position/size changes, which was triggering when posts loaded and changed the container dimensions
+- Fixed by:
+  - Removed `layout` prop from `motion.section` in `FeedPage.jsx` (changed to regular `<section>`)
+  - Removed unused `motion` import from `FeedPage.jsx`
+  - Removed `layout` prop from `FeedCard` component's `motion.article` (kept only the initial fade-in animation)
+  - Added explicit width constraints to `.bf-feed-grid` CSS to prevent stretching
+- Result: Feed now loads smoothly without the stretching animation issue
+
+**Prompt:**
+Can we use react query so that we don't refetch the pages (like i hate the initial load when i press on any category)
+
+**Result:**
+- Integrated React Query (TanStack Query) to cache feed data by category
+- Refactored `useFeed` hook to use `useInfiniteQuery` for paginated posts and `useQuery` for user interactions
+- Each category's posts are cached separately with query keys `['posts', category]`
+- When switching categories:
+  - Cached data is shown immediately if available (no loading animation)
+  - Data only refetches if stale (after 5 minutes) or if explicitly invalidated
+- Configured QueryClient with:
+  - `staleTime: 5 minutes` - data stays fresh for 5 minutes
+  - `gcTime: 10 minutes` - cached data kept for 10 minutes
+  - `refetchOnWindowFocus: false` - prevents unnecessary refetches
+- Optimistic updates for likes/saves still work, updating both interactions cache and posts cache
+- Result: Category switching is now instant when data is cached, eliminating the annoying initial load animation
 
 ## Best Practices Discovered
 - Being extremely specific with the features and what you want them to do/look was more effective, especially in 

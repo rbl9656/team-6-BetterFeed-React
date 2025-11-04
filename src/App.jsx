@@ -8,6 +8,7 @@ import {
   Navigate,
   useNavigate,
 } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppHeader } from './components/AppHeader'
 import { ToastProvider } from './context/toast'
 import { useAuthStore } from './store/auth'
@@ -18,6 +19,17 @@ import { ProfilePage } from './pages/ProfilePage'
 import { LoginPage } from './pages/LoginPage'
 import { SignupPage } from './pages/SignupPage'
 import { RouteGuard } from './components/RouteGuard'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh for 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+})
 
 const AppShell = () => {
   const navigate = useNavigate()
@@ -84,11 +96,13 @@ const AuthHydrator = ({ children }) => {
 }
 
 const App = () => (
-  <ToastProvider>
-    <AuthHydrator>
-      <RouterProvider router={router} />
-    </AuthHydrator>
-  </ToastProvider>
+  <QueryClientProvider client={queryClient}>
+    <ToastProvider>
+      <AuthHydrator>
+        <RouterProvider router={router} />
+      </AuthHydrator>
+    </ToastProvider>
+  </QueryClientProvider>
 )
 
 export default App
