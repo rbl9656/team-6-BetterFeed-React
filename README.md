@@ -1,16 +1,19 @@
-# React + Vite
+# BetterFeed
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Team & Contributions
+- **Veyd:** Created basic skeleton of display and design features. Less focused on functionality.
+- **Kyle** Updated background color selection and fixed issue where background fading was resetting after every post.
+- **Robbie** Added search bar based on key words and reading history to the profile and feed.
+- **Temirlan**: 
 
-Currently, two official plugins are available:
+## What It Does
+BetterFeed is an AI-powered smart feed application that presents condensed academic articles in an engaging, swipeable interface. Users can browse curated content, interact with posts through likes and saves, filter by categories, and most uniquely, engage with an AI assistant that explains or debates each article in different conversational styles. The app tracks your reading history and creates a personalized library of saved content for easy reference.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Setup
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Mock Data
+Our app uses mock data for user profiles, posts/articles, user interactions (likes/saves), chat conversation styles, and content categories. The reading history feature uses localStorage to persist data across sessions. Next week we'll connect it to our backend APIs and integrate with a real database for persistent storage.

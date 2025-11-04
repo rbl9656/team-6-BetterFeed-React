@@ -111,7 +111,14 @@ Make it responsive for mobile and desktop
 
 **Result:**
 
+**Prompt**
+Take on the role of an undergraduate student in a programming class. Looking at the attached instructions and at the previously generated files attached for a React front-end for an instagram reels-esque web app that shows summarized articles with an AI assistant, show me how to implement and edit my code to create a searchbar that can be used with key words and a reading history that shows on your profile and adds a mark to the feed.
+
+**Result**
+This prompt did an effective job in taking the previously created code from past group members and making additions without causing a major change in the style or spacing of the web app. The searchbar feature was integrated seamlessly and when tested, would filter the desired article. The read history tool was slightly more difficult to put into practice, as the code generated for several of the files did not work properly and the javascript had to be edited manually in order to not error out. I also had placed one of the files into the wrong folder, which took some time to error shoot and finally realize the issue and move it.
 
 ## Best Practices Discovered
-- [Things that made prompts more effective]
-- [Patterns that worked well]
+- Being extremely specific with the features and what you want them to do/look was more effective, especially in 
+combatting the AI slop that can be generated with vibe coding.
+- Attaching a reference to a previously created file in order for the AI to have a better idea of what the other 
+features look like/function was helpful in making it a more efficient process.
